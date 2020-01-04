@@ -80,8 +80,8 @@ public:
   void defaults () {
     clear();
     msgForPosA(1); // CLOSED
-    msgForPosB(2); // OPEN
-    msgForPosC(3); // TILTED
+    msgForPosB(2); // OPEN INCOMING
+    msgForPosC(3); // OPEN OUTGOING
     // aesActive(false);
     // eventDelaytime(0);
     ledOntime(100);
@@ -108,17 +108,17 @@ public:
 
     switch (angle) {
      case 0 ... POS_B_ANGLE - ANGLE_HYST - 1:
-      _position = State::PosA;
+      _position = State::PosB;
      break;
      case POS_B_ANGLE - ANGLE_HYST ... POS_B_ANGLE + ANGLE_HYST:
-      _position = State::PosB;
+      _position = State::PosA;
      break;
      case POS_B_ANGLE + ANGLE_HYST + 1 ... 359:
       _position = State::PosC;
      break;
 
      default:
-      _position = State::PosB;
+      _position = State::PosA;
     }
   }
 };
