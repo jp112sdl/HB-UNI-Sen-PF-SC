@@ -1,5 +1,5 @@
 # HB-UNI-Sen-PF-SC
-universal pet flap sensor for homematic
+Universal Sensor for PetFlap
 
 **Aufgabe**</br>
 ist es, zu erkennen, ob das Haustier gerade kommt oder geht.</br>
@@ -27,3 +27,14 @@ Es bot sich an, dort den Sensor zu platzieren.
 ![komplett](Images/komplett.jpg)
 
 Für die Magnetaufnahme habe ich einen kleinen Adapter gedruckt. Gut in Heißkleber eingegossen sitzt dort ein [Neodym-Magnet](https://www.magnethandel.de/neodym-magnete-3-2-mm-n52), den ich noch zu liegen hatte.
+
+**Betrieb**</br>
+
+![webui_einstellungen](Images/webui_einstellungen.png)
+
+
+![webui_bedienung](Images/webui_bedienung.png)
+
+
+
+## to be continued
