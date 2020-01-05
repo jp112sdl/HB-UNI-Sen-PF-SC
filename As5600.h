@@ -36,7 +36,8 @@ template <uint8_t pmode = NOM>
 class As5600  {
 
 private:
-  int16_t   _angle, _raw;
+  uint16_t  _angle;
+  int16_t   _raw;
   bool      _present;
 
   int _readSingleByte(uint8_t adr) {
@@ -116,19 +117,21 @@ public:
     } else {
       DPRINT(F("AS5600 FAILURE. Status: "));DHEXLN(status);
       //0x10 = AGC maximum gain overflow, magnet too weak
+      //0x30 = Magnet detected, magnet too weak
       //0x08 = AGC minimum gain overflow, magnet too strong
+      //0x28 = Magnet detected, magnet too strong
     }
   }
 
   void measure () {
     if (_present) {
        _raw = _readTwoBytes(RAWANGLEADDRESSMSB, RAWANGLEADDRESSLSB);
-      _angle = map(_raw, 0, 4096, 0, 359);
+      _angle = (_raw > -1) ? map(_raw, 0, 4096, 0, 359) : 0xFFFF;
     }
   }
 
-  int16_t angle () { return _angle; }
-  int16_t raw   () { return _raw;   }
+  uint16_t angle () { return _angle; }
+  int16_t  raw   () { return _raw;   }
 };
 
 }
