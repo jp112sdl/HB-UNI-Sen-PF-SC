@@ -5,6 +5,8 @@ Universal Sensor for PetFlap
 ist es, zu erkennen, ob das Haustier gerade kommt oder geht.</br>
 Einerseits als reine Info-Benachrichtigung aufs Handy, andererseits zum Schalten von Aktoren in Abhängigkeit der Anwesenheit des Tieres.
 
+Weiterhin bekomme ich nun auch eine Batterie-Leer-Meldung direkt in der CCU angezeigt, was sonst nur am LCD Display der Tierklappe selbst zu erkennen wäre.
+
 Verbaut ist bei uns eine [SureFlap Haustierklappe](https://www.surepetcare.com/de-de/haustierklappen/mikrochip-haustierklappe) mit RFID (ohne App-Steuerung).</br>
 _Den inneren Aufbau der SureFlap Katzenklappe findet man online zum [>>>Download<<<](https://fccid.io/XO9-DOOR-1001/Internal-Photos/Internal-Photos-1909838)._
 
