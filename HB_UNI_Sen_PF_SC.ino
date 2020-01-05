@@ -28,9 +28,9 @@
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 10
 
-#define MEASURE_INTERVAL 500 //interval in ms to read the angle
-#define POS_B_ANGLE      180 //degrees in normal position
-#define ANGLE_HYST        20 // +/- deg
+#define MEASURE_INTERVAL 1000 //interval in ms to read the angle
+#define POS_B_ANGLE       180 //degrees in normal position
+#define ANGLE_HYST         20 // +/- deg
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
