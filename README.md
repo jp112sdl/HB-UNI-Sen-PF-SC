@@ -32,8 +32,12 @@ Für die Magnetaufnahme habe ich einen kleinen Adapter gedruckt. Gut in Heißkle
 
 **Betrieb**</br>
 
+**Einstellungen:**
+
 ![webui_einstellungen](Images/webui_einstellungen.png)
 
+
+**Katze betritt gerade das Haus**
 
 ![webui_bedienung](Images/webui_bedienung.png)
 
