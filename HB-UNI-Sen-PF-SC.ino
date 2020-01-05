@@ -158,23 +158,25 @@ public:
 
 template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
 class As5600Channel : public StateGenericChannel<As5600PinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
+
+  //Alarm to check if the AS5600 works properly
   class As5600SensorCheckAlarm : public Alarm {
     As5600Channel& ch;
+  private:
+    bool prev_state;
   public:
-    As5600SensorCheckAlarm (As5600Channel& c) : Alarm (5), ch(c) {}
+    As5600SensorCheckAlarm (As5600Channel& c) : Alarm (5), ch(c), prev_state(false) {}
     virtual ~As5600SensorCheckAlarm () {}
 
     void trigger (AlarmClock& clock)  {
       set(seconds2ticks(5));
       clock.add(*this);
-      static bool prev_as5600state = false;
-      bool curr_as5600state =  ch.possens.getAsFail();
-      ch.setAs5600Failure(curr_as5600state);
-      if (prev_as5600state != curr_as5600state) {
+      bool curr_state =  ch.possens.getAsFail();
+      ch.setAs5600Failure(curr_state); //set the flags() correctly
+      if (prev_state != curr_state) { //if the AS5600 state has changed, send info message
         ch.changed(true);
-        prev_as5600state = curr_as5600state;
+        prev_state = curr_state;
       }
-
     }
   } sensorcheck;
 
