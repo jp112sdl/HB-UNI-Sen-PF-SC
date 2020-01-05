@@ -41,6 +41,10 @@ Für die Magnetaufnahme habe ich einen kleinen Adapter gedruckt. Gut in Heißkle
 
 ![webui_bedienung](Images/webui_bedienung.png)
 
+**Es erfolgte eine kontinuierliche Überwachung des Magnetwinkelsensors. Im Fehlerfall erscheint eine Servicemeldung**
+
+![webui_servicemeldung](Images/webui_servicemeldung.png)
+
 
 
 ## to be continued
