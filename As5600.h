@@ -39,6 +39,7 @@ private:
   uint16_t  _angle;
   int16_t   _raw;
   bool      _present;
+  uint8_t   _status;
 
   int _readSingleByte(uint8_t adr) {
     Wire.beginTransmission(AS5600ADDRESS);
@@ -77,7 +78,7 @@ private:
 
 public:
 
-  As5600 () : _angle(0), _raw(0), _present(false) {}
+  As5600 () : _angle(0), _raw(0), _present(false), _status(0) {}
 
   uint8_t getConfigLo() {
     return _readSingleByte(CONFADDRESSLSB);
@@ -105,10 +106,14 @@ public:
     _writeSingleByte(CONFADDRESSMSB, config);
   }
 
+  uint8_t getStatus() {
+    return _readSingleByte(STATUSADDRESS) & 0b00111000;
+  }
+
   void init () {
     Wire.begin();
 
-    uint8_t status = _readSingleByte(STATUSADDRESS) & 0b00111000;
+    uint8_t status = getStatus();
     if (status == 0x20) {
       _present=true;
       setPowerMode(pmode);
@@ -124,14 +129,18 @@ public:
   }
 
   void measure () {
+    _status = getStatus();
+    _present = _status == 0x20;
+
     if (_present) {
        _raw = _readTwoBytes(RAWANGLEADDRESSMSB, RAWANGLEADDRESSLSB);
       _angle = (_raw > -1) ? map(_raw, 0, 4096, 0, 359) : 0xFFFF;
     }
   }
 
-  uint16_t angle () { return _angle; }
-  int16_t  raw   () { return _raw;   }
+  uint16_t angle () { return _angle;  }
+  int16_t  raw   () { return _raw;    }
+  bool     isOK  () { return _present;}
 };
 
 }

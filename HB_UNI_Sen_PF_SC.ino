@@ -28,10 +28,6 @@
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 10
 
-#define MEASURE_INTERVAL 1000 //interval in ms to read the angle
-#define POS_B_ANGLE       180 //degrees in normal position
-#define ANGLE_HYST         20 // +/- deg
-
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
@@ -73,68 +69,143 @@ public:
   }
 };
 
-DEFREGISTER(Reg1,CREG_AES_ACTIVE,CREG_MSGFORPOS,CREG_EVENTDELAYTIME,CREG_LEDONTIME,CREG_TRANSMITTRYMAX)
+DEFREGISTER(Reg1,CREG_AES_ACTIVE,CREG_MSGFORPOS,CREG_EVENTDELAYTIME,CREG_LEDONTIME,CREG_TRANSMITTRYMAX, 0x94, 0x95, 0x96, 0x97)
 class CFList1 : public RegList1<Reg1> {
 public:
   CFList1 (uint16_t addr) : RegList1<Reg1>(addr) {}
+
+  bool angleMeasureInterval (uint16_t value) const {
+    return this->writeRegister(0x94, (value >> 8) & 0xff) && this->writeRegister(0x95, value & 0xff);
+  }
+  uint16_t angleMeasureInterval () const {
+    return (this->readRegister(0x94, 0) << 8) + this->readRegister(0x95, 0);
+  }
+
+  bool angleDefault (uint8_t value) const {
+    return this->writeRegister(0x96, value & 0xff);
+  }
+  uint8_t angleDefault () const {
+    return this->readRegister(0x96, 0);
+  }
+
+  bool angleHysteresis (uint8_t value) const {
+    return this->writeRegister(0x97, value & 0xff);
+  }
+  uint8_t angleHysteresis () const {
+    return this->readRegister(0x97, 0);
+  }
+
+
   void defaults () {
     clear();
     msgForPosA(1); // CLOSED
     msgForPosB(2); // OPEN INCOMING
     msgForPosC(3); // OPEN OUTGOING
-    // aesActive(false);
-    // eventDelaytime(0);
+    aesActive(false);
+    eventDelaytime(0);
     ledOntime(100);
     transmitTryMax(6);
+    angleMeasureInterval(1000);
+    angleDefault(90); // = 180 degrees, will be multiplied by 2
+    angleHysteresis(10); // = 20 degrees, will be multiplied by 2
   }
 };
 
 class As5600PinPosition : public Position {
 private:
   As5600<AS5600PowerMode::LPM3> as5600;
+  uint16_t _ms;
+  uint16_t _angle_default;
+  uint16_t _angle_hyst;
+  bool asfail;
 public:
-  As5600PinPosition () {}
+  As5600PinPosition () : _ms(1000), _angle_default(180), _angle_hyst(20), asfail(false) {}
   void init () {
     as5600.init();
   }
 
-  uint32_t interval () { return millis2ticks(MEASURE_INTERVAL); }
+  void setInterval(uint16_t ms) { _ms = ms; }
+
+  void setAngleDefault(uint16_t a) { _angle_default = a; }
+
+  void setAngleHysteris(uint16_t a) {_angle_hyst = a; }
+
+  bool getAsFail() { return as5600.isOK() == false; }
+
+  uint32_t interval () { return millis2ticks(_ms); }
 
   void measure (__attribute__((unused)) bool async=false) {
+    //DPRINT(F("interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
     as5600.measure();
     uint16_t angle = as5600.angle();
-
-    DPRINT("angle: ");DDECLN(angle);
-
-    switch (angle) {
-     case 0 ... POS_B_ANGLE - ANGLE_HYST - 1:
-      _position = State::PosB;
-     break;
-     case POS_B_ANGLE - ANGLE_HYST ... POS_B_ANGLE + ANGLE_HYST:
+    if (angle != 0xFFFF) {
       _position = State::PosA;
-     break;
-     case POS_B_ANGLE + ANGLE_HYST + 1 ... 359:
-      _position = State::PosC;
-     break;
 
-     default:
-      _position = State::PosA;
+      DPRINT("angle: ");DDECLN(angle);
+
+      if (angle < (_angle_default - _angle_hyst))
+        _position = State::PosB;
+      if (angle >= (_angle_default - _angle_hyst) && angle < (_angle_default + _angle_hyst))
+        _position = State::PosA;
+      if (angle >= (_angle_default + _angle_hyst) && angle < 360)
+        _position = State::PosC;
+
+    } else {
+      DPRINT(F("ERROR. Angle out of range: "));DDECLN(angle);
     }
   }
 };
 
 template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
 class As5600Channel : public StateGenericChannel<As5600PinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
+  class As5600SensorCheckAlarm : public Alarm {
+    As5600Channel& ch;
+  public:
+    As5600SensorCheckAlarm (As5600Channel& c) : Alarm (5), ch(c) {}
+    virtual ~As5600SensorCheckAlarm () {}
 
+    void trigger (AlarmClock& clock)  {
+      set(seconds2ticks(5));
+      clock.add(*this);
+      static bool prev_as5600state = false;
+      bool curr_as5600state =  ch.possens.getAsFail();
+      ch.setAs5600Failure(curr_as5600state);
+      if (prev_as5600state != curr_as5600state) {
+        ch.changed(true);
+        prev_as5600state = curr_as5600state;
+      }
+
+    }
+  } sensorcheck;
+
+private:
+  bool _asfail;
 public:
   typedef StateGenericChannel<As5600PinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
 
-  As5600Channel () : BaseChannel() {};
+  As5600Channel () : BaseChannel(), sensorcheck(*this), _asfail(false) {};
   ~As5600Channel () {}
 
   void init () {
    BaseChannel::init();
    BaseChannel::possens.init();
+   sysclock.add(sensorcheck);
+  }
+
+  void configChanged() {
+    BaseChannel::possens.setInterval(max(this->getList1().angleMeasureInterval(), 250));
+    BaseChannel::possens.setAngleDefault(this->getList1().angleDefault() * 2);
+    BaseChannel::possens.setAngleHysteris(max(this->getList1().angleHysteresis() * 2, 10));
+  }
+
+  void setAs5600Failure(bool f) {
+    _asfail = f;
+  }
+
+  uint8_t flags () const {
+    uint8_t flags = _asfail ? 0x05 << 1 : 0x00;
+    flags |= this->device().battery().low() ? 0x80 : 0x00;
+    return flags;
   }
 
 };
@@ -165,6 +236,7 @@ void setup () {
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.channel(1).init();
   sdev.initDone();
+  sdev.channel(1).changed(true);
 }
 
 void loop() {
