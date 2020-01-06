@@ -16,14 +16,14 @@
 // we use a Pro Mini
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
-#define LED1_PIN 4
-#define LED2_PIN 5
+#define LED1_PIN 6
+#define LED2_PIN 4
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-#define BATTERY_EXT     A0
-#define BATTERY_EXT_EN   7
+#define BATTERY_EXT     A3
+#define BATTERY_EXT_EN  A2
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 10
