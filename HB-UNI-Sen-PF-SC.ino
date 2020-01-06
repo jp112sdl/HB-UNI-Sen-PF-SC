@@ -33,8 +33,8 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0xF3,0x4D,0x00},       // Device ID
-    "JPPFSC0000",           // Device Serial
+    {0xF3,0x4D,0x01},       // Device ID
+    "JPPFSC0001",           // Device Serial
     {0xF3,0x4D},            // Device Model
     0x22,                   // Firmware Version
     as::DeviceType::ThreeStateSensor, // Device Type
@@ -99,8 +99,8 @@ public:
   void defaults () {
     clear();
     msgForPosA(1); // CLOSED
-    msgForPosB(2); // OPEN INCOMING
-    msgForPosC(3); // OPEN OUTGOING
+    msgForPosB(2); // OPEN OUTGOING
+    msgForPosC(3); // OPEN INCOMING
     aesActive(false);
     eventDelaytime(0);
     ledOntime(100);
@@ -144,11 +144,11 @@ public:
       DPRINT("angle: ");DDECLN(angle);
 
       if (angle < (_angle_default - _angle_hyst))
-        _position = State::PosB;
+        _position = State::PosC;
       if (angle >= (_angle_default - _angle_hyst) && angle < (_angle_default + _angle_hyst))
         _position = State::PosA;
       if (angle >= (_angle_default + _angle_hyst) && angle < 360)
-        _position = State::PosC;
+        _position = State::PosB;
 
     } else {
       DPRINT(F("ERROR. Angle out of range: "));DDECLN(angle);
