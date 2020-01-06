@@ -47,7 +47,7 @@ Für die Magnetaufnahme habe ich einen kleinen Adapter gedruckt. Gut in Heißkle
 
 **Fehlt nur noch das Gehäuse.**
 
-![promini](Images/promini.png)
+![promini](Images/promini.jpg)
 
 
 
