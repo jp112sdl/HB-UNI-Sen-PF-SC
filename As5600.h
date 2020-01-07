@@ -2,6 +2,8 @@
 // AskSin++
 // 2020-01-03 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
+// Datasheet:
+// https://ams.com/documents/20143/36005/AS5600_DS000365_5-00.pdf
 
 #ifndef SENSORS_AS5600_H_
 #define SENSORS_AS5600_H_
@@ -110,21 +112,28 @@ public:
     return _readSingleByte(STATUSADDRESS) & 0b00111000;
   }
 
+  uint8_t getAGC() {
+    return _readSingleByte(AGCADDRESS);
+  }
+
   void init () {
     Wire.begin();
 
     uint8_t status = getStatus();
+    uint8_t agc    = getAGC();
+
     if (status == 0x20) {
       _present=true;
       setPowerMode(pmode);
       //setWatchDog(true);
-      DPRINT(F("AS5600 OK. CONF Lo: "));DHEX(getConfigLo());DPRINT(", Hi:");DHEXLN(getConfigHi());
+      DPRINT(F("AS5600 OK. AGC: "));DDEC(agc);DPRINT(F(", CONFIG Lo: 0x"));DHEX(getConfigLo());DPRINT(", Hi: 0x");DHEXLN(getConfigHi());
     } else {
-      DPRINT(F("AS5600 FAILURE. Status: "));DHEXLN(status);
-      //0x10 = AGC maximum gain overflow, magnet too weak
-      //0x30 = Magnet detected, magnet too weak
-      //0x08 = AGC minimum gain overflow, magnet too strong
+      DPRINT(F("AS5600 FAILURE. AGC: "));DDEC(agc);DPRINT(F(", Status: 0x"));DHEXLN(status);
+      //0x08 = no Magnet detected, magnet too strong, AGC minimum gain overflow
+      //0x10 = no Magnet detected, magnet too weak,   AGC maximum gain overflow
       //0x28 = Magnet detected, magnet too strong
+      //0x30 = Magnet detected, magnet too weak
+      //0x38 = no sensor
     }
   }
 
@@ -140,7 +149,7 @@ public:
 
   uint16_t angle () { return _angle;  }
   int16_t  raw   () { return _raw;    }
-  bool     isOK  () { return _present;}
+  uint8_t  status() { return _status ;}
 };
 
 }

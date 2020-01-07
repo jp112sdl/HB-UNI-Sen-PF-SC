@@ -120,35 +120,29 @@ private:
   bool asfail;
 public:
   As5600PinPosition () : _ms(1000), _angle_default(180), _angle_hyst(20), asfail(false) {}
-  void init () {
-    as5600.init();
-  }
 
-  void setInterval(uint16_t ms) { _ms = ms; }
+  void init ()                      { as5600.init(); }
 
-  void setAngleDefault(uint16_t a) { _angle_default = a; }
+  void setInterval(uint16_t ms)     { _ms = ms; }
 
-  void setAngleHysteris(uint16_t a) {_angle_hyst = a; }
+  void setAngleDefault(uint16_t a)  { _angle_default = a; }
 
-  bool getAsFail() { return as5600.isOK() == false; }
+  void setAngleHysteris(uint16_t a) { _angle_hyst = a; }
 
-  uint32_t interval () { return millis2ticks(_ms); }
+  uint8_t getAsState()              { return as5600.status(); }
+
+  uint32_t interval ()              { return millis2ticks(_ms); }
 
   void measure (__attribute__((unused)) bool async=false) {
-    //DPRINT(F("interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
     as5600.measure();
     uint16_t angle = as5600.angle();
+
+    //DPRINT(F("angle: "));DDEC(angle);DPRINT(F(", interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
+
     if (angle != 0xFFFF) {
       _position = State::PosA;
-
-      DPRINT("angle: ");DDECLN(angle);
-
-      if (angle < (_angle_default - _angle_hyst))
-        _position = State::PosC;
-      if (angle >= (_angle_default - _angle_hyst) && angle < (_angle_default + _angle_hyst))
-        _position = State::PosA;
-      if (angle >= (_angle_default + _angle_hyst) && angle < 360)
-        _position = State::PosB;
+      if (angle < (_angle_default - _angle_hyst)) _position = State::PosC;
+      if (angle > (_angle_default + _angle_hyst)) _position = State::PosB;
 
     } else {
       DPRINT(F("ERROR. Angle out of range: "));DDECLN(angle);
@@ -163,16 +157,16 @@ class As5600Channel : public StateGenericChannel<As5600PinPosition,HALTYPE,List0
   class As5600SensorCheckAlarm : public Alarm {
     As5600Channel& ch;
   private:
-    bool prev_state;
+    uint8_t prev_state;
   public:
-    As5600SensorCheckAlarm (As5600Channel& c) : Alarm (5), ch(c), prev_state(false) {}
+    As5600SensorCheckAlarm (As5600Channel& c) : Alarm (1), ch(c), prev_state(0) {}
     virtual ~As5600SensorCheckAlarm () {}
 
     void trigger (AlarmClock& clock)  {
       set(seconds2ticks(5));
       clock.add(*this);
-      bool curr_state =  ch.possens.getAsFail();
-      ch.setAs5600Failure(curr_state); //set the flags() correctly
+      uint8_t curr_state = ch.possens.getAsState();
+      ch.setAs5600State(curr_state); //set the flags() correctly
       if (prev_state != curr_state) { //if the AS5600 state has changed, send info message
         ch.changed(true);
         prev_state = curr_state;
@@ -181,11 +175,11 @@ class As5600Channel : public StateGenericChannel<As5600PinPosition,HALTYPE,List0
   } sensorcheck;
 
 private:
-  bool _asfail;
+  uint8_t _asstate;
 public:
   typedef StateGenericChannel<As5600PinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
 
-  As5600Channel () : BaseChannel(), sensorcheck(*this), _asfail(false) {};
+  As5600Channel () : BaseChannel(), sensorcheck(*this), _asstate(0) {};
   ~As5600Channel () {}
 
   void init () {
@@ -200,12 +194,32 @@ public:
     BaseChannel::possens.setAngleHysteris(max(this->getList1().angleHysteresis() * 2, 10));
   }
 
-  void setAs5600Failure(bool f) {
-    _asfail = f;
+  void setAs5600State(uint8_t s) {
+    _asstate = s;
   }
 
   uint8_t flags () const {
-    uint8_t flags = _asfail ? 0x05 << 1 : 0x00;
+
+    uint8_t flags = 0x00;
+
+    switch (_asstate) {
+      case 0x08:
+        flags = 0x01 << 1;
+      break;
+      case 0x10:
+        flags = 0x02 << 1;
+      break;
+      case 0x28:
+        flags = 0x03 << 1;
+      break;
+      case 0x30:
+        flags = 0x04 << 1;
+      break;
+      case 0x38:
+        flags = 0x05 << 1;
+      break;
+    }
+
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
@@ -238,7 +252,6 @@ void setup () {
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.channel(1).init();
   sdev.initDone();
-  sdev.channel(1).changed(true);
 }
 
 void loop() {
