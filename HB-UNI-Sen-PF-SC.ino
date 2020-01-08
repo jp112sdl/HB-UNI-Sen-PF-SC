@@ -24,6 +24,7 @@
 
 #define BATTERY_EXT     A3
 #define BATTERY_EXT_EN  A2
+#define BATTERY_MEASURE_INTERVAL 60UL*60*12 //every 12h
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 10
@@ -53,7 +54,7 @@ public:
   void init (const HMID& id) {
     BaseHal::init(id);
     // measure battery every 1h
-    battery.init(seconds2ticks(60UL*60),sysclock);
+    battery.init(seconds2ticks(BATTERY_MEASURE_INTERVAL),sysclock);
   }
 } hal;
 
@@ -226,21 +227,63 @@ public:
 
 };
 
-typedef As5600Channel<Hal,CFList0,CFList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
+class OperatingVoltageChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CHANNEL, CFList0>, public Alarm {
+  class OperatingVoltageEventMsg : public Message {
+    public:
+      void init(uint8_t msgcnt, uint16_t voltage) { Message::init(0x0e, msgcnt, 0x53, BCAST, (voltage >> 8) & 0xff, voltage & 0xff); }
+  } msg;
 
-class CFType : public ThreeStateDevice<Hal,ChannelType,1,CFList0> {
-public:
-  typedef ThreeStateDevice<Hal,ChannelType,1,CFList0> TSDevice;
-  CFType(const DeviceInfo& info,uint16_t addr) : TSDevice(info,addr) {}
-  virtual ~CFType () {}
+  public:
+    OperatingVoltageChannel () : Channel(), Alarm(10) {}
+    virtual ~OperatingVoltageChannel () {}
 
-  virtual void configChanged () {
-    TSDevice::configChanged();
-    // set battery low/critical values
-    uint8_t lb = this->getList0().lowBatLimit();
-    DPRINT("LOWBAT ");DDECLN(lb);
-    battery().low(lb);
-  }
+    virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+      tick = seconds2ticks(BATTERY_MEASURE_INTERVAL);
+      msg.init(device().nextcount(), device().battery().current());
+      device().broadcastEvent(msg);
+      sysclock.add(*this);
+    }
+
+    void configChanged() { }
+
+    void setup(Device<Hal, CFList0>* dev, uint8_t number, uint16_t addr) {
+      Channel::setup(dev, number, addr);
+      sysclock.add(*this);
+    }
+
+    uint8_t status () const { return 0; }
+
+    uint8_t flags  () const { return this->device().battery().low() ? 0x80 : 0x00; }
+};
+
+
+
+typedef As5600Channel<Hal,CFList0,CFList1,DefList4,PEERS_PER_CHANNEL> AS5600Channel;
+
+class CFType : public ChannelDevice<Hal, VirtBaseChannel<Hal, CFList0>, 2, CFList0> {
+  public:
+    VirtChannel<Hal, AS5600Channel          , CFList0>  ch1;
+    VirtChannel<Hal, OperatingVoltageChannel, CFList0>  ch2;
+  public:
+    typedef ChannelDevice<Hal, VirtBaseChannel<Hal, CFList0>, 2, CFList0> DeviceType;
+
+    CFType (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr) {
+      DeviceType::registerChannel(ch1, 1);
+      DeviceType::registerChannel(ch2, 2);
+    }
+    virtual ~CFType () {}
+
+    AS5600Channel&           channel1 () { return ch1; }
+
+    OperatingVoltageChannel& channel2 () { return ch2; }
+
+    virtual void configChanged () {
+      DeviceType::configChanged();
+      // set battery low/critical values
+      uint8_t lb = this->getList0().lowBatLimit();
+      DPRINT("LOWBAT ");DDECLN(lb);
+      battery().low(lb);
+    }
 };
 
 CFType sdev(devinfo,0x20);
@@ -250,7 +293,7 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  sdev.channel(1).init();
+  sdev.channel1().init();
   sdev.initDone();
 }
 
