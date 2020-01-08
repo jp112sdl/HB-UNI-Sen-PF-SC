@@ -36,7 +36,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0xF3,0x4D,0x01},       // Device ID
     "JPPFSC0001",           // Device Serial
     {0xF3,0x4D},            // Device Model
-    0x22,                   // Firmware Version
+    0x01,                   // Firmware Version
     as::DeviceType::ThreeStateSensor, // Device Type
     {0x01,0x00}             // Info Bytes
 };
