@@ -11,7 +11,7 @@
 
 #include <Register.h>
 #include <ContactState.h>
-#include "As5600.h"
+#include <sensors/As5600.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
