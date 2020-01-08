@@ -13,23 +13,16 @@
 #include <ContactState.h>
 #include <sensors/As5600.h>
 
-// we use a Pro Mini
-// Arduino pin for the LED
-// D4 == PIN 4 on Pro Mini
-#define LED1_PIN 6
-#define LED2_PIN 4
-// Arduino pin for the config button
-// B0 == PIN 8 on Pro Mini
-#define CONFIG_BUTTON_PIN 8
+#define LED1_PIN                  6
+#define LED2_PIN                  4
+#define CONFIG_BUTTON_PIN         8
 
-#define BATTERY_EXT     A3
-#define BATTERY_EXT_EN  A2
-#define BATTERY_MEASURE_INTERVAL 60UL*60*12 //every 12h
+#define BATTERY_EXT               A3
+#define BATTERY_EXT_EN            A2
+#define BATTERY_MEASURE_INTERVAL  60UL*60*12 //every 12h
 
-// number of available peers per channel
 #define PEERS_PER_CHANNEL 10
 
-// all library classes are placed in the namespace 'as'
 using namespace as;
 
 // define all device properties
@@ -42,9 +35,6 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x01,0x00}             // Info Bytes
 };
 
-/**
- * Configure the used hardware
- */
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef DualStatusLed<LED2_PIN,LED1_PIN> LedType;
@@ -53,7 +43,6 @@ class Hal : public BaseHal {
 public:
   void init (const HMID& id) {
     BaseHal::init(id);
-    // measure battery every 1h
     battery.init(seconds2ticks(BATTERY_MEASURE_INTERVAL),sysclock);
   }
 } hal;
@@ -107,8 +96,8 @@ public:
     ledOntime(100);
     transmitTryMax(6);
     angleMeasureInterval(1000);
-    angleDefault(90); // = 180 degrees, will be multiplied by 2
-    angleHysteresis(10); // = 20 degrees, will be multiplied by 2
+    angleDefault(90);    // = 180 degrees, will be multiplied by 2
+    angleHysteresis(10); // = 20 degrees,  will be multiplied by 2
   }
 };
 
@@ -255,7 +244,6 @@ class OperatingVoltageChannel : public Channel<Hal, List1, EmptyList, List4, PEE
 
     uint8_t flags  () const { return this->device().battery().low() ? 0x80 : 0x00; }
 };
-
 
 
 typedef As5600Channel<Hal,CFList0,CFList1,DefList4,PEERS_PER_CHANNEL> AS5600Channel;
