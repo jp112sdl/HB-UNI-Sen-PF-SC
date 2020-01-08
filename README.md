@@ -49,6 +49,10 @@ Für die Magnetaufnahme habe ich einen kleinen Adapter gedruckt. Gut in Heißkle
 
 ![promini](Images/promini.jpg)
 
+**Schaltplan**
+
+![promini](Images/schaltplan.png)
+
 
 
 ## to be continued
