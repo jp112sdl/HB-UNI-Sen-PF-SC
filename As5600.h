@@ -139,7 +139,7 @@ public:
 
   void measure () {
     _status = getStatus();
-    _present = _status == 0x20;
+    _present = (_status == 0x20);
 
     if (_present) {
        _raw = _readTwoBytes(RAWANGLEADDRESSMSB, RAWANGLEADDRESSLSB);
