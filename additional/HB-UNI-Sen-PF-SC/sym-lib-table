@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name Arduino_Pro_Mini)(type Legacy)(uri ${KIPRJMOD}/Arduino_Pro_Mini.lib)(options "")(descr ""))
+  (lib (name cc1101)(type Legacy)(uri ${KIPRJMOD}/cc1101.lib)(options "")(descr ""))
+  (lib (name AS5600)(type Legacy)(uri ${KIPRJMOD}/AS5600.lib)(options "")(descr ""))
+)
