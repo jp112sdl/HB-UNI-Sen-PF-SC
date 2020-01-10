@@ -242,7 +242,7 @@ class OperatingVoltageChannel : public Channel<Hal, List1, EmptyList, List4, PEE
 
     uint8_t status () const { return 0; }
 
-    uint8_t flags  () const { return this->device().battery().low() ? 0x80 : 0x00; }
+    uint8_t flags  () const { return 0; }
 };
 
 
