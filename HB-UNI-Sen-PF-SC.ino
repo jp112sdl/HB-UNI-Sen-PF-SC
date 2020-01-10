@@ -20,6 +20,8 @@
 #define BATTERY_EXT               A3
 #define BATTERY_EXT_EN            A2
 #define BATTERY_MEASURE_INTERVAL  60UL*60*12 //every 12h
+#define CYCLETIME                 60UL*60*20 //every 20h
+
 
 #define PEERS_PER_CHANNEL 10
 
@@ -249,13 +251,26 @@ class OperatingVoltageChannel : public Channel<Hal, List1, EmptyList, List4, PEE
 typedef As5600Channel<Hal,CFList0,CFList1,DefList4,PEERS_PER_CHANNEL> AS5600Channel;
 
 class CFType : public ChannelDevice<Hal, VirtBaseChannel<Hal, CFList0>, 2, CFList0> {
+  class CycleInfoAlarm : public Alarm {
+    CFType& dev;
+   public:
+     CycleInfoAlarm (CFType& d) : Alarm (seconds2ticks(CYCLETIME)), dev(d) {}
+     virtual ~CycleInfoAlarm () {}
+
+     void trigger (AlarmClock& clock)  {
+       set(seconds2ticks(CYCLETIME));
+       clock.add(*this);
+       dev.channel(1).changed(true);
+     }
+   } cycle;
+
   public:
     VirtChannel<Hal, AS5600Channel          , CFList0>  ch1;
     VirtChannel<Hal, OperatingVoltageChannel, CFList0>  ch2;
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, CFList0>, 2, CFList0> DeviceType;
 
-    CFType (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr) {
+    CFType (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
       DeviceType::registerChannel(ch1, 1);
       DeviceType::registerChannel(ch2, 2);
     }
@@ -267,10 +282,23 @@ class CFType : public ChannelDevice<Hal, VirtBaseChannel<Hal, CFList0>, 2, CFLis
 
     virtual void configChanged () {
       DeviceType::configChanged();
+
       // set battery low/critical values
-      uint8_t lb = this->getList0().lowBatLimit();
+      uint8_t lb = max(10, this->getList0().lowBatLimit());
       DPRINT("LOWBAT ");DDECLN(lb);
       battery().low(lb);
+
+      if( this->getList0().cycleInfoMsg() == true ) {
+        DPRINTLN(F("Activate Cycle Msg"));
+        sysclock.cancel(cycle);
+        cycle.set(seconds2ticks(CYCLETIME));
+        sysclock.add(cycle);
+      }
+      else {
+        DPRINTLN(F("Deactivate Cycle Msg"));
+        sysclock.cancel(cycle);
+      }
+
     }
 };
 
