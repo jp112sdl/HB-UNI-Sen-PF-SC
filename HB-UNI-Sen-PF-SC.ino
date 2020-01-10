@@ -219,7 +219,7 @@ public:
 class OperatingVoltageChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CHANNEL, CFList0>, public Alarm {
   class OperatingVoltageEventMsg : public Message {
     public:
-      void init(uint8_t msgcnt, uint16_t voltage) { Message::init(0x0c, msgcnt, 0x53, BCAST, (voltage >> 8) & 0xff, voltage & 0xff); }
+      void init(uint8_t msgcnt, uint8_t voltage) { Message::init(0x0a, msgcnt, 0x53, BCAST | RPTEN , voltage & 0xff, 0x00); }
   } msg;
 
   public:
