@@ -32,7 +32,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0xF3,0x4D,0x01},       // Device ID
     "JPPFSC0001",           // Device Serial
     {0xF3,0x4D},            // Device Model
-    0x01,                   // Firmware Version
+    0x10,                   // Firmware Version
     as::DeviceType::ThreeStateSensor, // Device Type
     {0x01,0x00}             // Info Bytes
 };
@@ -129,7 +129,7 @@ public:
     as5600.measure();
     uint16_t angle = as5600.angle();
 
-    //DPRINT(F("angle: "));DDEC(angle);DPRINT(F(", interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
+    //DPRINT(F("AGC: "));DDEC(as5600.getAGC());DPRINT(F(", angle: "));DDEC(angle);DPRINT(F(", interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
 
     if (angle != 0xFFFF) {
       _position = State::PosA;
