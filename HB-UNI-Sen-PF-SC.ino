@@ -19,7 +19,7 @@
 
 #define BATTERY_EXT               A3
 #define BATTERY_EXT_EN            A2
-#define BATTERY_MEASURE_INTERVAL  60UL*60*12 //every 12h
+#define BATTERY_MEASURE_INTERVAL  60UL*60*6  //every 6
 #define CYCLETIME                 60UL*60*20 //every 20h
 
 
@@ -87,12 +87,11 @@ public:
     return this->readRegister(0x97, 0);
   }
 
-
   void defaults () {
     clear();
-    msgForPosA(1); // CLOSED
-    msgForPosB(2); // OPEN OUTGOING
-    msgForPosC(3); // OPEN INCOMING
+    //msgForPosA(1); // CLOSED
+    //msgForPosB(2); // OPEN OUTGOING
+    //msgForPosC(3); // OPEN INCOMING
     aesActive(false);
     eventDelaytime(0);
     ledOntime(100);
@@ -110,8 +109,9 @@ private:
   uint16_t _angle_default;
   uint16_t _angle_hyst;
   bool asfail;
+  uint8_t lastPos;
 public:
-  As5600PinPosition () : _ms(1000), _angle_default(180), _angle_hyst(20), asfail(false) {}
+  As5600PinPosition () : _ms(1000), _angle_default(180), _angle_hyst(20), asfail(false), lastPos(0) {}
 
   void init ()                      { as5600.init(); }
 
@@ -133,8 +133,13 @@ public:
 
     if (angle != 0xFFFF) {
       _position = State::PosA;
-      if (angle < (_angle_default - _angle_hyst)) _position = State::PosC;
       if (angle > (_angle_default + _angle_hyst)) _position = State::PosB;
+      if (angle < (_angle_default - _angle_hyst)) _position = State::PosC;
+
+      if (_position != lastPos) {
+        DPRINT("Position changed Angle = ");DDECLN(angle);
+        lastPos = _position;
+      }
 
     } else {
       DPRINT(F("ERROR. Angle out of range: "));DDECLN(angle);
@@ -184,6 +189,13 @@ public:
     BaseChannel::possens.setInterval(max(this->getList1().angleMeasureInterval(), 250));
     BaseChannel::possens.setAngleDefault(this->getList1().angleDefault() * 2);
     BaseChannel::possens.setAngleHysteris(max(this->getList1().angleHysteresis() * 2, 10));
+    DPRINTLN(F("configChanged List1"));
+    DPRINT(F("angleMeasureInterval() = "));DDECLN(this->getList1().angleMeasureInterval());
+    DPRINT(F("angleDefault()         = "));DDECLN(this->getList1().angleDefault());
+    DPRINT(F("angleHysteresis()      = "));DDECLN(this->getList1().angleHysteresis());
+    DPRINT(F("msgForPosA()           = "));DDECLN(this->getList1().msgForPosA());
+    DPRINT(F("msgForPosB()           = "));DDECLN(this->getList1().msgForPosB());
+    DPRINT(F("msgForPosC()           = "));DDECLN(this->getList1().msgForPosC());
   }
 
   void setAs5600State(uint8_t s) {
