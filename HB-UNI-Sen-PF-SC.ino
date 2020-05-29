@@ -129,7 +129,7 @@ public:
     as5600.measure();
     uint16_t angle = as5600.angle();
 
-    //DPRINT(F("AGC: "));DDEC(as5600.getAGC());DPRINT(F(", angle: "));DDEC(angle);DPRINT(F(", interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
+    DPRINT(F("AGC: "));DDEC(as5600.getAGC());DPRINT(F(", angle: "));DDEC(angle);DPRINT(F(", interval:"));DDEC(_ms);DPRINT(F(", angle def:"));DDEC(_angle_default);DPRINT(F(", angle hyst:"));DDECLN(_angle_hyst);
 
     if (angle != 0xFFFF) {
       _position = State::PosA;
@@ -319,8 +319,11 @@ ConfigButton<CFType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  delay(1000);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  // wait for valid battery value
+   while( hal.battery.current() == 0 ) ;
   sdev.channel1().init();
   sdev.initDone();
 }
