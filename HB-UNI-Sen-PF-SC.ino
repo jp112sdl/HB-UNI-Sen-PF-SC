@@ -208,19 +208,19 @@ public:
 
     switch (_asstate) {
       case 0x08:
-        flags = 0x01 << 1;
+        flags = 0x01;
       break;
       case 0x10:
-        flags = 0x02 << 1;
+        flags = 0x02;
       break;
       case 0x28:
-        flags = 0x03 << 1;
+        flags = 0x03;
       break;
       case 0x30:
-        flags = 0x04 << 1;
+        flags = 0x04;
       break;
       case 0x38:
-        flags = 0x05 << 1;
+        flags = 0x05;
       break;
     }
 
